@@ -4,7 +4,7 @@ This project written in python and can be run under any OS.
 
 Tested only in macOS.
 
-[توضیحات نسخه فارسی](README-FA)
+[توضیحات نسخه فارسی](README-FA.md)
 
 ## Requirments
 
