@@ -4,7 +4,7 @@
 
 تنها در macOS تست شده است.
 
-[English Version](README-FA)
+[English Version](README.md)
 
 ## نیازمندی‌ها
 
