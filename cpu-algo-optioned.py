@@ -1,0 +1,245 @@
+import tkinter as tk
+from tkinter import messagebox
+
+# FCFS Scheduling Function
+def fcfs_scheduling(processes, arrival_times, burst_times):
+    n = len(processes)
+    waiting_times = [0] * n
+    turnaround_times = [0] * n
+
+    # Calculate Waiting Time
+    for i in range(1, n):
+        waiting_times[i] = burst_times[i - 1] + waiting_times[i - 1] - arrival_times[i] + arrival_times[i - 1]
+        if waiting_times[i] < 0:
+            waiting_times[i] = 0
+
+    # Calculate Turnaround Time
+    for i in range(n):
+        turnaround_times[i] = burst_times[i] + waiting_times[i]
+
+    # Calculate Average Waiting Time and Turnaround Time
+    avg_waiting_time = sum(waiting_times) / n
+    avg_turnaround_time = sum(turnaround_times) / n
+
+    return waiting_times, turnaround_times, avg_waiting_time, avg_turnaround_time
+
+# MLFQ Scheduling Function
+def mlfq_scheduling(processes, arrival_times, burst_times, quantum_times):
+    n = len(processes)
+    max_queue_level = len(quantum_times)
+    queues = [[] for _ in range(max_queue_level)]
+    
+    remaining_burst = burst_times[:]
+    waiting_times = [0] * n
+    turnaround_times = [0] * n
+    time = 0
+    completed = 0
+    last_execution_time = [-1] * n
+    
+    current_process_idx = 0
+    
+    while completed < n:
+        while current_process_idx < n and arrival_times[current_process_idx] <= time:
+            queues[0].append(current_process_idx)
+            current_process_idx += 1
+
+        executed_process = False
+        for q in range(max_queue_level):
+            if queues[q]:
+                process_id = queues[q].pop(0)
+                quantum = quantum_times[q]
+                
+                if last_execution_time[process_id] != -1:
+                    waiting_times[process_id] += time - last_execution_time[process_id]
+                
+                executed_process = True
+                if remaining_burst[process_id] > quantum:
+                    time += quantum
+                    remaining_burst[process_id] -= quantum
+                    last_execution_time[process_id] = time
+                    
+                    if q + 1 < max_queue_level:
+                        queues[q + 1].append(process_id)
+                    else:
+                        queues[q].append(process_id)
+                else:
+                    time += remaining_burst[process_id]
+                    turnaround_times[process_id] = time - arrival_times[process_id]
+                    waiting_times[process_id] = turnaround_times[process_id] - burst_times[process_id]
+                    remaining_burst[process_id] = 0
+                    last_execution_time[process_id] = time
+                    completed += 1
+                
+                break
+        
+        if not executed_process and current_process_idx < n:
+            time = arrival_times[current_process_idx]
+
+    avg_waiting_time = sum(waiting_times) / n
+    avg_turnaround_time = sum(turnaround_times) / n
+    
+    return waiting_times, turnaround_times, avg_waiting_time, avg_turnaround_time
+
+# Round Robin Scheduling Function
+def round_robin_scheduling(processes, arrival_times, burst_times, quantum):
+    n = len(processes)
+    remaining_burst = burst_times[:]
+    waiting_times = [0] * n
+    turnaround_times = [0] * n
+    time = 0
+    completed = 0
+    queue = []
+    process_index = 0
+
+    while completed < n:
+        # Add processes to the queue as they arrive
+        while process_index < n and arrival_times[process_index] <= time:
+            queue.append(process_index)
+            process_index += 1
+
+        if queue:
+            process_id = queue.pop(0)
+
+            if remaining_burst[process_id] > quantum:
+                time += quantum
+                remaining_burst[process_id] -= quantum
+            else:
+                time += remaining_burst[process_id]
+                remaining_burst[process_id] = 0
+                completed += 1
+                turnaround_times[process_id] = time - arrival_times[process_id]
+                waiting_times[process_id] = turnaround_times[process_id] - burst_times[process_id]
+
+            # Add the process back to the queue if it's not finished
+            if remaining_burst[process_id] > 0:
+                queue.append(process_id)
+        else:
+            time = arrival_times[process_index]
+
+    avg_waiting_time = sum(waiting_times) / n
+    avg_turnaround_time = sum(turnaround_times) / n
+    
+    return waiting_times, turnaround_times, avg_waiting_time, avg_turnaround_time
+
+# Function to handle button click and run the chosen scheduling algorithm
+def run_scheduling():
+    global algorithm_choice, result_box  # Declare it as global
+    try:
+        processes = [f"P{i+1}" for i in range(int(entry_processes.get()))]
+        arrival_times = list(map(int, entry_arrival_times.get().split()))
+        burst_times = list(map(int, entry_burst_times.get().split()))
+        
+        if len(arrival_times) != len(processes) or len(burst_times) != len(processes):
+            raise ValueError("Number of processes, arrival times, and burst times should match.")
+        
+        if algorithm_choice.get() == "FCFS":
+            waiting_times, turnaround_times, avg_waiting, avg_turnaround = fcfs_scheduling(processes, arrival_times, burst_times)
+        
+        elif algorithm_choice.get() == "MLFQ":
+            quantum_times = list(map(int, entry_quantum_times.get().split()))
+            waiting_times, turnaround_times, avg_waiting, avg_turnaround = mlfq_scheduling(processes, arrival_times, burst_times, quantum_times)
+        
+        elif algorithm_choice.get() == "RR":
+            quantum = int(entry_quantum_times.get())
+            waiting_times, turnaround_times, avg_waiting, avg_turnaround = round_robin_scheduling(processes, arrival_times, burst_times, quantum)
+        
+        result_box.delete(1.0, tk.END)
+        result_box.insert(tk.END, "Process\tArrival\tBurst\tWaiting\tTurnaround\n")
+        result_box.insert(tk.END, "-" * 50 + "\n")
+
+        for i in range(len(processes)):
+            result_box.insert(tk.END, f"{processes[i]:<8}{arrival_times[i]:<8}{burst_times[i]:<8}{waiting_times[i]:<8}{turnaround_times[i]:<8}\n")
+
+        result_box.insert(tk.END, "-" * 50 + "\n")
+        result_box.insert(tk.END, f"Average Waiting Time: {avg_waiting:.2f}\n")
+        result_box.insert(tk.END, f"Average Turnaround Time: {avg_turnaround:.2f}\n")
+
+    except ValueError as ve:
+        messagebox.showerror("Input Error", str(ve))
+
+# Function to toggle quantum time entry for MLFQ and RR
+def toggle_quantum_times():
+    global algorithm_choice  # Declare it as global
+    if algorithm_choice.get() in ["MLFQ", "RR"]:
+        label_quantum_times.grid(row=4, column=0, padx=10, pady=10)
+        entry_quantum_times.grid(row=4, column=1, padx=10, pady=10)
+    else:
+        label_quantum_times.grid_forget()
+        entry_quantum_times.grid_forget()
+
+# Function to show "About" information
+def show_about():
+    messagebox.showinfo("About", "Scheduling Algorithms App\nVersion 1.3\nCreated by [JARVIS-AI]")
+
+# Create the main window
+def create_main_window():
+    global entry_processes, entry_arrival_times, entry_burst_times, result_box  # Declare global entries
+    global label_quantum_times, entry_quantum_times, algorithm_choice  # Declare global variables
+
+    root = tk.Tk()
+    root.title("Scheduling Algorithms")
+
+    # Disable maximize button
+    root.resizable(False, False)
+
+    # Load and set the icon (use a PNG file for macOS)
+    icon_image = tk.PhotoImage(file="/Users/jarvis/Downloads/chip.png")  # Update this with your image path
+    root.iconphoto(False, icon_image)
+
+    # Create a Menu bar
+    menu_bar = tk.Menu(root)
+
+    # Create a "Help" menu
+    help_menu = tk.Menu(menu_bar, tearoff=0)
+    help_menu.add_command(label=":)", command=show_about)
+
+    # Add the "Help" menu to the menu bar
+    menu_bar.add_cascade(label="Help", menu=help_menu)
+    
+    # Set the menu bar
+    root.config(menu=menu_bar)
+
+    # Create input fields
+    label_processes = tk.Label(root, text="Number of Processes:")
+    label_processes.grid(row=0, column=0, padx=10, pady=10)
+
+    entry_processes = tk.Entry(root)
+    entry_processes.grid(row=0, column=1, padx=10, pady=10)
+
+    label_arrival_times = tk.Label(root, text="Arrival Times:")
+    label_arrival_times.grid(row=1, column=0, padx=10, pady=10)
+
+    entry_arrival_times = tk.Entry(root)
+    entry_arrival_times.grid(row=1, column=1, padx=10, pady=10)
+
+    label_burst_times = tk.Label(root, text="Burst Times:")
+    label_burst_times.grid(row=2, column=0, padx=10, pady=10)
+
+    entry_burst_times = tk.Entry(root)
+    entry_burst_times.grid(row=2, column=1, padx=10, pady=10)
+
+    # Add quantum time label and entry
+    label_quantum_times = tk.Label(root, text="Quantum Time(s):")
+    entry_quantum_times = tk.Entry(root)
+
+    # Add Algorithm selection dropdown
+    algorithm_choice = tk.StringVar(value="FCFS")
+    label_algorithm = tk.Label(root, text="Choose Scheduling Algorithm:")
+    label_algorithm.grid(row=3, column=0, padx=10, pady=10)
+
+    algorithms = ["FCFS", "MLFQ", "RR"]
+    algorithm_menu = tk.OptionMenu(root, algorithm_choice, *algorithms, command=lambda _: toggle_quantum_times())
+    algorithm_menu.grid(row=3, column=1, padx=10, pady=10)
+
+    # Create Run button
+    run_button = tk.Button(root, text="Run Scheduling", command=run_scheduling)
+    run_button.grid(row=5, columnspan=2, pady=20)
+
+    # Create Result box
+    result_box = tk.Text(root, width=60, height=15)
+    result_box.grid(row=6, columnspan=2, padx=10, pady=10)
+
+    root.mainloop()
+
+# Start the application
+create_main_window()
