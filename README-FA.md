@@ -35,6 +35,22 @@ Tkinter به‌صورت پیش‌فرض با توزیع‌های استاندا�
      sudo dnf install python3-tkinter
      ```
 
+## تصاویر
+
+![Screenshot of CPU Algo App](Assets/1.png)
+
+<hr />
+
+![Screenshot of CPU Algo App](Assets/2.png)
+
+<hr />
+
+![Screenshot of CPU Algo App](Assets/3.png)
+
+<hr />
+
+![Screenshot of CPU Algo App](Assets/4.png)
+
 ## اعتبار
 
 توسعه‌دهنده: امیر محمد صفری
