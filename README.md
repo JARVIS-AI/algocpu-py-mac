@@ -34,6 +34,21 @@ For example:
      ```bash
      sudo dnf install python3-tkinter
      ```
+## Screenshots
+
+![Screenshot of CPU Algo App](Assets/1.png)
+
+<hr />
+
+![Screenshot of CPU Algo App](Assets/2.png)
+
+<hr />
+
+![Screenshot of CPU Algo App](Assets/3.png)
+
+<hr />
+
+![Screenshot of CPU Algo App](Assets/4.png)
 
 ## Credit
 
